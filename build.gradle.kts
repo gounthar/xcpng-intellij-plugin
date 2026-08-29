@@ -24,10 +24,15 @@ repositories {
 
 dependencies {
     intellijPlatform {
-        // IntelliJ IDEA Community as the development target. The plugin depends only on
-        // com.intellij.modules.platform, so it is intended to load in WebStorm too. See the
-        // note in libs.versions.toml: that intent is documented behaviour, not yet observed.
-        intellijIdeaCommunity(libs.versions.idea)
+        // intellijIdea, NOT intellijIdeaCommunity. IDEA Community has not been published
+        // since 2025.3 and the accessor cannot resolve a download URL for anything newer; the
+        // plugin says so by name when you try. Full working, and the mistake that produced it,
+        // in gradle/libs.versions.toml.
+        //
+        // The plugin depends only on com.intellij.modules.platform, so it is intended to load
+        // in WebStorm too. Still not observed. Targeting WebStorm directly is now a reasonable
+        // alternative and is discussed in the catalog.
+        intellijIdea(libs.versions.idea)
 
         pluginVerifier()
     }
@@ -78,7 +83,9 @@ tasks.test {
  * developer with a global hooks directory still gets this project's hooks, and it says so when
  * it overrides one. `-PskipGitHooks` opts out.
  */
-val installGitHooks by tasks.registering {
+// tasks.register, not `by tasks.registering`. The delegated form is deprecated as of
+// Gradle 9.6 ("Use the named() API instead") and warns on every build.
+val installGitHooks = tasks.register("installGitHooks") {
     description = "Points core.hooksPath at .githooks for this repository."
     group = "verification"
 

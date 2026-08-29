@@ -12,40 +12,97 @@ intellij-platform = "2.18.1"
 
 # The IDE this plugin is DEVELOPED against.
 #
-# MEASURED 2026-08-29:
-#   curl -sL https://cache-redirector.jetbrains.com/intellij-repository/releases/\
-#     com/jetbrains/intellij/idea/ideaIC/maven-metadata.xml
-#   -> newest non-EAP releases end 2026.1.4, 2026.1.5, 2026.2, 2026.2.0.1, 2026.2.1
+# MEASURED, AND THE FIRST VALUE HERE WAS WRONG in a way worth recording, because the wrong
+# value came from a real measurement of the wrong index.
 #
-# NOTE this is IntelliJ IDEA Community, not WebStorm, and the ticket that prompted this
-# repository is a WebStorm ticket. That is deliberate rather than an oversight. IC is the
-# conventional development target, and a plugin that depends only on
-# com.intellij.modules.platform loads in every IDE built on the platform, WebStorm included.
-# Developing against WebStorm directly would tie the build to one commercial IDE for no gain.
+# The first attempt read
+#   .../intellij-repository/releases/com/jetbrains/intellij/idea/ideaIC/maven-metadata.xml
+# saw 2026.1.4, 2026.1.5, 2026.2, 2026.2.0.1, 2026.2.1, and pinned 2026.2.1 with
+# intellijIdeaCommunity(). The build refused:
 #
-# UNVERIFIED: that this plugin actually loads in WebStorm. Nothing has been built or launched.
-# The claim above is how the platform is documented to work, not something observed here, and
-# it is exactly the kind of claim worth checking early because it is cheap to check and
-# expensive to be wrong about.
+#   [org.jetbrains.intellij.platform] IntelliJ IDEA Community (IC) is no longer published
+#   since 2025.3 (253), use: intellijIdea("2026.2.1")
+#   > Couldn't resolve IntellijIdeaCommunity download URL for version: '2026.2.1'
+#
+# Confirmed independently against the release feed the plugin actually uses:
+#   curl -s 'https://data.services.jetbrains.com/products/releases?code=IIC&latest=true&type=release'
+#   -> IIC: version 2025.3, build 253.28294.334, date 2025-12-08.  It stops there.
+#   -> IIU: version 2026.2.1, build 262.9437.185, date 2026-08-10.  This is the live one.
+#   -> WS:  version 2026.2.1, build 262.9437.145, date 2026-08-04.
+#
+# So IntelliJ IDEA Community has not been published since 2025.3, IDEA is now a single
+# distribution, and intellijIdea() is the accessor. The stale ideaIC maven metadata still
+# lists versions that cannot be downloaded, which is why reading it looked like a
+# measurement and was not one.
+#
+# THE GENERAL LESSON, worth more than the value: checking an index and checking THE index are
+# different acts, and they are indistinguishable when the wrong one happens to have an entry.
+#
+# THIS ALSO KILLS THE REASONING THAT WAS WRITTEN HERE. The old comment said IC is "the
+# conventional development target" and that developing against WebStorm would tie the build to
+# a commercial IDE for no gain. There is no free IDEA Community to target any more, so that
+# trade-off no longer exists. Targeting WebStorm directly (webstorm("2026.2.1"), code WS in
+# the feed above) is now a live option and would prove the WebStorm premise as a side effect
+# of every build. Not taken yet, deliberately: the plugin's own error message recommends
+# intellijIdea, and changing two things at once when the build has never gone green makes the
+# next failure ambiguous. Revisit once it builds.
 idea = "2026.2.1"
 
 # Kotlin.
 #
-# Bounded ABOVE by the platform, not only below. The IntelliJ Platform bundles kotlin-stdlib
-# and documents a supported Kotlin version per release branch; compiling above it emits binary
-# metadata the IDE cannot read. The 2026.2 line sits on the 2.2 series.
+# MEASURED, AND THE COMMENT THAT STOOD HERE HAD THE CONSTRAINT BACKWARDS.
 #
-# NOT MEASURED HERE. The toolbox sibling establishes its equivalent pin by reading jars in the
-# installed app and then launching against them, and that is why its value can be trusted. No
-# such read has been done for this project, so this is a starting point taken from the
-# platform's guidance. Recorded as such rather than quietly presented as a pin.
-kotlin = "2.2.20"
+# It said the platform bounds Kotlin from ABOVE, that compiling above the platform's version
+# emits metadata the IDE cannot read, and that the 2026.2 line "sits on the 2.2 series". It
+# pinned 2.2.20 on that reasoning, taken from general platform guidance rather than from this
+# platform. The build disproved it in one line, repeated for about forty jars:
+#
+#   e: .../idea-2026.2.1/lib/fleet.andel.jar!/META-INF/fleet.andel.kotlin_module
+#      Module was compiled with an incompatible version of Kotlin. The binary version of its
+#      metadata is 2.4.0, expected version is 2.2.0.
+#
+# So 2.4 is a FLOOR here, not a ceiling. The compiler has to be new enough to READ the
+# platform's own metadata, which is the same shape the toolbox sibling records for the Toolbox
+# API jars, and the opposite of what was written here.
+#
+# Corroborated by reading the shipped jar rather than only by the error:
+#   lib/intellij.libraries.kotlin.reflect.jar  Implementation-Version: 2.4.0-release-281
+#
+# 2.4.10 rather than 2.4.0 because there is no released 2.4.0: the Gradle Plugin Portal goes
+# 2.4.0-RC2 then straight to 2.4.10. It is also what the toolbox sibling pins, so all three
+# repositories now compile on one Kotlin, which is one fewer thing to reason about.
+#
+# A ceiling does still exist in principle, since kotlin-stdlib is platform-provided. It is not
+# currently binding: 2.4.10 and the platform's 2.4.0 are the same metadata family. Re-check
+# after a platform upgrade by re-reading the jar above.
+#
+# Read it with:
+#   unzip -p ~/.gradle/caches/9.7.1/transforms/bbefa6d9d5fad40075174a54aa6c9717/transformed/\
+#     idea-2026.2.1/lib/intellij.libraries.kotlin.reflect.jar META-INF/MANIFEST.MF
+kotlin = "2.4.10"
 
 # Platform-provided at runtime, exactly as they are Toolbox-provided in the sibling. Declared
 # compileOnly in build.gradle.kts and they must never reach the plugin zip.
 #
-# NOT MEASURED, same caveat as above. These are current releases, which is the wrong basis for
-# a value that is really a runtime floor. Fix by reading what the pinned platform ships.
+# NOW MEASURED, 2026-08-29, by reading the jars in the downloaded idea-2026.2.1
+# distribution rather than by taking the newest release. Both values were previously marked
+# NOT MEASURED and one of them happened to be right, which is the least useful outcome: a
+# guess that agrees with the answer is indistinguishable from knowledge until something moves.
+#
+#   lib/intellij.libraries.kotlinx.coroutines.core.jar
+#     META-INF/kotlinx_coroutines_core.version -> 1.10.2-intellij-1
+#   lib/intellij.libraries.kotlinx.serialization.core.jar
+#     Implementation-Version: 1.9.0
+#
+# Note the coroutines suffix. The platform ships an IntelliJ FORK of 1.10.2, not stock 1.10.2,
+# and that fork is not on Maven Central. 1.10.2 is the correct upstream base to compile
+# against; do not try to pin the -intellij-1 string, it will not resolve.
+#
+# Identical in JetBrains Gateway 2026.2.1, checked at the same time, which is why the gateway
+# sibling carries the same three values.
+#
+# Bump these only after re-reading those jars in the new distribution, and bump them TO what
+# is there. dependabot is told to leave them alone in .github/dependabot.yml.
 coroutines = "1.10.2"
 serialization = "1.9.0"
 
