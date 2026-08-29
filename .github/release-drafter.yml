@@ -71,6 +71,17 @@ categories:
 change-template: '- $TITLE (#$NUMBER) @$AUTHOR'
 no-changes-template: '- No user-visible changes'
 
+# FIRST-RELEASE TRAP in the changelog line below. With no previous tag $PREVIOUS_TAG is empty
+# and the link renders as compare/...$RESOLVED_VERSION, which is dead. It is wrong on release
+# one and correct on every release after, so it is not worth restructuring: delete the line by
+# hand that once, or accept one dead link. Measured by the toolbox project, 2026-08-29.
+#
+# Kept byte-identical to that project's template otherwise, deliberately. Diverging a shared
+# file over a cosmetic detail costs more than the detail.
+#
+# A YAML comment rather than an HTML one inside the block scalar. The first attempt put it in
+# the template itself, where it is invisible in the rendered notes but ships into the source of
+# every published release body. A note to maintainers does not belong in the artifact.
 template: |
   $CHANGES
 
