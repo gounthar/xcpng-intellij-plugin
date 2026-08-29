@@ -1,4 +1,4 @@
-package dev.gounthar.xcpng.intellij.xo
+package dev.gounthar.xcpng.ide.xo
 
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject

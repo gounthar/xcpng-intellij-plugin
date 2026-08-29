@@ -1,9 +1,9 @@
-package dev.gounthar.xcpng.intellij
+package dev.gounthar.xcpng.ide
 
-import dev.gounthar.xcpng.intellij.XoResourceModel.Action
-import dev.gounthar.xcpng.intellij.XoResourceModel.Availability
-import dev.gounthar.xcpng.intellij.xo.XoPowerState
-import dev.gounthar.xcpng.intellij.xo.XoVm
+import dev.gounthar.xcpng.ide.XoResourceModel.Action
+import dev.gounthar.xcpng.ide.XoResourceModel.Availability
+import dev.gounthar.xcpng.ide.xo.XoPowerState
+import dev.gounthar.xcpng.ide.xo.XoVm
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

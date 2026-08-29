@@ -1,8 +1,8 @@
-package dev.gounthar.xcpng.intellij
+package dev.gounthar.xcpng.ide
 
-import dev.gounthar.xcpng.intellij.xo.XoClient
-import dev.gounthar.xcpng.intellij.xo.XoSnapshot
-import dev.gounthar.xcpng.intellij.xo.XoVm
+import dev.gounthar.xcpng.ide.xo.XoClient
+import dev.gounthar.xcpng.ide.xo.XoSnapshot
+import dev.gounthar.xcpng.ide.xo.XoVm
 
 /**
  * An [XoClient] that refuses every call.

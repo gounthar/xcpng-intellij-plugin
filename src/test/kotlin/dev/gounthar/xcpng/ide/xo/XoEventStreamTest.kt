@@ -1,4 +1,4 @@
-package dev.gounthar.xcpng.intellij.xo
+package dev.gounthar.xcpng.ide.xo
 
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json

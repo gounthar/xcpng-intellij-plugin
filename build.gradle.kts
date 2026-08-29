@@ -1,3 +1,5 @@
+import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
+
 plugins {
     alias(libs.plugins.kotlin)
     alias(libs.plugins.serialization)
@@ -57,7 +59,19 @@ intellijPlatform {
         // means the version cannot drift from gradle.properties. The toolbox sibling hit
         // exactly that drift with its two name fields: one was changed, the build stayed
         // green, and the UI still showed the old one.
-        id = "dev.gounthar.xcpng.intellij"
+        // NOT "...xcpng.intellij", and this is a Marketplace rule rather than taste. The
+        // Plugin Verifier refuses the artifact outright:
+        //   Invalid plugin descriptor 'plugin.xml'. The plugin ID
+        //   'dev.gounthar.xcpng.intellij' should not include the word 'intellij'.
+        //   (TemplateWordInPluginId, reported since 2024-03-26)
+        // It is a structural refusal, so verification does not merely warn, it schedules zero
+        // checks and fails. There is a -mute switch; muting a rule that blocks publication
+        // would only move the failure to the day it matters.
+        //
+        // The repository directory is still named xcpng-intellij-plugin, deliberately. The
+        // constraint is on the plugin ID, and "IntelliJ Platform" is the correct name of the
+        // SDK this targets, so the directory keeps it and the published identity does not.
+        id = "dev.gounthar.xcpng.ide"
         name = "XCP-ng (unofficial)"
         version = project.version.toString()
 
@@ -67,6 +81,28 @@ intellijPlatform {
             // working plugin stops loading after an IDE upgrade, and there is no evidence of
             // an incompatibility to encode.
             untilBuild = provider { null }
+        }
+    }
+
+    // THE ONE CHECK THAT ANSWERS THE REPOSITORY'S OWN PREMISE.
+    //
+    // A green `build` compiles against IDEA and proves nothing about loading in another IDE,
+    // because a <depends> is resolved at LOAD time. The whole argument for this repository is
+    // that a com.intellij.modules.platform-only plugin is portable across the IDE family, and
+    // until this block existed that argument rested on documentation.
+    //
+    // WebStorm is named explicitly and first, because it is the IDE the request that prompted
+    // this repository was actually about. Verifying only against IDEA would be a fixture that
+    // agrees with the belief being tested.
+    pluginVerification {
+        ides {
+            // create(), not ide(). The DSL method is `create`; `ide` does not exist and fails
+            // as an unresolved reference in the build script, which is a cheap failure but a
+            // confusing one because every blog post writes it the other way. Read from
+            // IntelliJPlatformExtension$PluginVerification$Ides, which also offers
+            // recommended(), latest {}, select {}, current() and local(...).
+            create(IntelliJPlatformType.WebStorm, libs.versions.idea.get())
+            create(IntelliJPlatformType.IntellijIdea, libs.versions.idea.get())
         }
     }
 }

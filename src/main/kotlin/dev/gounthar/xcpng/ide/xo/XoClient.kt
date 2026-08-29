@@ -1,4 +1,4 @@
-package dev.gounthar.xcpng.intellij.xo
+package dev.gounthar.xcpng.ide.xo
 
 /**
  * The slice of Xen Orchestra this plugin needs, named in plugin terms rather than XO terms.

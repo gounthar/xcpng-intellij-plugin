@@ -1,4 +1,4 @@
-package dev.gounthar.xcpng.intellij
+package dev.gounthar.xcpng.ide
 
 import java.io.File
 import java.util.concurrent.TimeUnit

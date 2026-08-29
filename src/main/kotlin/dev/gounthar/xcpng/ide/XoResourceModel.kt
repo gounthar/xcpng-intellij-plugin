@@ -1,8 +1,8 @@
-package dev.gounthar.xcpng.intellij
+package dev.gounthar.xcpng.ide
 
-import dev.gounthar.xcpng.intellij.xo.XoClient
-import dev.gounthar.xcpng.intellij.xo.XoPowerState
-import dev.gounthar.xcpng.intellij.xo.XoVm
+import dev.gounthar.xcpng.ide.xo.XoClient
+import dev.gounthar.xcpng.ide.xo.XoPowerState
+import dev.gounthar.xcpng.ide.xo.XoVm
 
 /**
  * What a tool window renders, and what it is allowed to offer, with no IntelliJ imports.

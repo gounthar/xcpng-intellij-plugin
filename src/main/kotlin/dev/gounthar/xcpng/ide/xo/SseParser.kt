@@ -1,4 +1,4 @@
-package dev.gounthar.xcpng.intellij.xo
+package dev.gounthar.xcpng.ide.xo
 
 /**
  * One server-sent event: the `event:` name and the accumulated `data:` payload.

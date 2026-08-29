@@ -1,4 +1,4 @@
-package dev.gounthar.xcpng.intellij.xo
+package dev.gounthar.xcpng.ide.xo
 
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers

@@ -108,14 +108,45 @@ jobs:
           path: build/reports/tests/test
           retention-days: 7
 
-  # DELIBERATELY ABSENT: a verifyPlugin job.
-  #
-  # The IntelliJ Plugin Verifier needs a list of IDEs to verify against, configured under
-  # intellijPlatform.pluginVerification.ides. None is configured yet, and an unconfigured
-  # verifier either fails for the wrong reason or verifies against nothing. The second is the
-  # dangerous one: a green "verified" that checked no IDE is worse than no job at all.
-  #
-  # Add the job and the ides block together, in one change, or not at all.
+  verify:
+    name: plugin verifier
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Validate the Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v6
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      # This job was deliberately absent until the ides block existed, because a verifier with
+      # no configured IDE list schedules zero checks and can still report green, which is worse
+      # than no job. The block and the job landed in the same change, as the note that stood
+      # here required.
+      #
+      # It verifies against WebStorm and IDEA, and it is the only check here that can see
+      # the portability claim this repository exists to make: a <depends> is resolved at LOAD time, so
+      # compiling proves nothing about it.
+      #
+      # It downloads a full IDE, so it is a separate job from build rather than another step,
+      # and it is the slow one.
+      - name: Verify the plugin
+        run: ./gradlew verifyPlugin
+
+      - name: Upload the verification report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: plugin-verifier-report
+          path: build/reports/pluginVerifier
+          retention-days: 7
 
   actionlint:
     name: actionlint

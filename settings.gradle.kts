@@ -1,4 +1,4 @@
-rootProject.name = "xcpng-intellij"
+rootProject.name = "xcpng-ide"
 
 pluginManagement {
     repositories {

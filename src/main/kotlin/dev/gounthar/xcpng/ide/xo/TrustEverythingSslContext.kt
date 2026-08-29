@@ -1,4 +1,4 @@
-package dev.gounthar.xcpng.intellij.xo
+package dev.gounthar.xcpng.ide.xo
 
 import java.security.SecureRandom
 import java.security.cert.X509Certificate
