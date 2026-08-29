@@ -1,0 +1,40 @@
+<!--
+  IDE plugin descriptor.
+
+  id, name and version are NOT declared here. The IntelliJ Platform Gradle plugin patches them
+  in from the `pluginConfiguration` block in build.gradle.kts, and declaring them in both
+  places is how the two copies drift. The toolbox sibling hit exactly that: one of two name
+  fields was changed, the build stayed green, and the UI still showed the old one.
+
+  The <extensions> block is deliberately absent rather than stubbed. Declaring a toolWindow
+  that names a factory class which does not exist yet makes verifyPlugin fail with a
+  resolution error, which is a worse first-run experience than a plugin that loads and does
+  nothing. Write the factory first, then declare it. CONTEXT.md has the order.
+
+  When the tool window is added, it goes here as:
+
+    <extensions defaultExtensionNs="com.intellij">
+      <toolWindow id="XCP-ng" anchor="right" factoryClass="..."/>
+    </extensions>
+-->
+<idea-plugin>
+    <vendor url="https://github.com/gounthar/xcpng-intellij-plugin">gounthar</vendor>
+
+    <description><![CDATA[
+      See and drive an XCP-ng pool from inside the IDE, through Xen Orchestra.
+
+      Unofficial and unaffiliated with Vates. This is a personal experiment.
+    ]]></description>
+
+    <!--
+      com.intellij.modules.platform ONLY, and that is the load-bearing choice in this file.
+
+      It is what makes the plugin loadable in every IDE built on the platform rather than in
+      IntelliJ IDEA alone, WebStorm included, which matters because the request that prompted
+      this repository is a WebStorm request. Adding a dependency on a Java or Kotlin module
+      would quietly restrict it to the IDEs that ship one.
+
+      UNVERIFIED: that it does in fact load in WebStorm. Documented behaviour, not observed.
+    -->
+    <depends>com.intellij.modules.platform</depends>
+</idea-plugin>

@@ -1,0 +1,62 @@
+# Dependabot for the two ecosystems this repository has: Gradle, and the GitHub Actions the
+# workflows pin.
+#
+# Weekly rather than daily. This is a personal project; a daily cadence would make dependabot
+# most of the repository's traffic.
+#
+# WHAT IS IGNORED, AND WHY IT DIFFERS FROM THE TOOLBOX SIBLING.
+#
+# There, three pins are host-provided by the Toolbox app and are RUNTIME FLOORS read out of
+# the installed app's bin/lib, so raising one lifts the compile ceiling above the runtime and
+# CI cannot see it (CI only compiles; the failure is a NoSuchMethodError inside the host).
+# Two of them were raised by a bot and merged green, past a comment naming the exact jar the
+# pin was matched to.
+#
+# The same shape applies here with a different host. The IntelliJ Platform provides
+# kotlin-stdlib, kotlinx-coroutines and kotlinx-serialization at runtime, so all three are
+# bounded above by the platform rather than by what is newest.
+#
+# ONE HONEST DIFFERENCE: over in the sibling those values were MEASURED, by reading jars in
+# the installed app and then launching against them. That read has not been done here. So the
+# ignores below are protecting values that are currently a starting point rather than a
+# measurement. That makes them more important, not less: a bot must not raise a number whose
+# correct value nobody has established yet.
+#
+# The IntelliJ Platform Gradle plugin is NOT ignored. It is build tooling, it never reaches
+# the plugin zip, and keeping it current is the right default.
+#
+# The IDEA artifact has no automation here: it comes from the JetBrains releases repository,
+# not Maven Central, and dependabot is not configured for that registry. Bump it by re-reading
+# the metadata by hand:
+#   curl -sL https://cache-redirector.jetbrains.com/intellij-repository/releases/\
+#     com/jetbrains/intellij/idea/ideaIC/maven-metadata.xml
+#
+# Raising it is a real change to test, not a routine one to wave through: it moves the
+# platform the three ignored pins below are bounded by.
+---
+version: 2
+
+updates:
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+    ignore:
+      # Platform-provided at runtime. See the note at the top of this file.
+      - dependency-name: org.jetbrains.kotlinx:kotlinx-coroutines-core
+      - dependency-name: org.jetbrains.kotlinx:kotlinx-serialization-json
+      # kotlin-stdlib is platform-provided too, so the Kotlin version has a ceiling as well
+      # as a floor. Both plugins read version.ref = "kotlin", so both are named.
+      - dependency-name: org.jetbrains.kotlin.jvm
+      - dependency-name: org.jetbrains.kotlin.plugin.serialization
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    labels:
+      - dependencies
+      - github_actions

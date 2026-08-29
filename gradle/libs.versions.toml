@@ -1,0 +1,59 @@
+[versions]
+# The IntelliJ Platform Gradle plugin, 2.x line.
+#
+# MEASURED 2026-08-29 from the Gradle Plugin Portal metadata:
+#   curl -s https://plugins.gradle.org/m2/org/jetbrains/intellij/platform/\
+#     org.jetbrains.intellij.platform.gradle.plugin/maven-metadata.xml | grep release
+#   -> <release>2.18.1</release>, lastUpdated 20260710143656
+#
+# Build tooling. It never reaches the plugin zip, so keeping it current is the right default
+# and dependabot is left free to raise it.
+intellij-platform = "2.18.1"
+
+# The IDE this plugin is DEVELOPED against.
+#
+# MEASURED 2026-08-29:
+#   curl -sL https://cache-redirector.jetbrains.com/intellij-repository/releases/\
+#     com/jetbrains/intellij/idea/ideaIC/maven-metadata.xml
+#   -> newest non-EAP releases end 2026.1.4, 2026.1.5, 2026.2, 2026.2.0.1, 2026.2.1
+#
+# NOTE this is IntelliJ IDEA Community, not WebStorm, and the ticket that prompted this
+# repository is a WebStorm ticket. That is deliberate rather than an oversight. IC is the
+# conventional development target, and a plugin that depends only on
+# com.intellij.modules.platform loads in every IDE built on the platform, WebStorm included.
+# Developing against WebStorm directly would tie the build to one commercial IDE for no gain.
+#
+# UNVERIFIED: that this plugin actually loads in WebStorm. Nothing has been built or launched.
+# The claim above is how the platform is documented to work, not something observed here, and
+# it is exactly the kind of claim worth checking early because it is cheap to check and
+# expensive to be wrong about.
+idea = "2026.2.1"
+
+# Kotlin.
+#
+# Bounded ABOVE by the platform, not only below. The IntelliJ Platform bundles kotlin-stdlib
+# and documents a supported Kotlin version per release branch; compiling above it emits binary
+# metadata the IDE cannot read. The 2026.2 line sits on the 2.2 series.
+#
+# NOT MEASURED HERE. The toolbox sibling establishes its equivalent pin by reading jars in the
+# installed app and then launching against them, and that is why its value can be trusted. No
+# such read has been done for this project, so this is a starting point taken from the
+# platform's guidance. Recorded as such rather than quietly presented as a pin.
+kotlin = "2.2.20"
+
+# Platform-provided at runtime, exactly as they are Toolbox-provided in the sibling. Declared
+# compileOnly in build.gradle.kts and they must never reach the plugin zip.
+#
+# NOT MEASURED, same caveat as above. These are current releases, which is the wrong basis for
+# a value that is really a runtime floor. Fix by reading what the pinned platform ships.
+coroutines = "1.10.2"
+serialization = "1.9.0"
+
+[libraries]
+coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
+serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
+
+[plugins]
+kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+intellij-platform = { id = "org.jetbrains.intellij.platform", version.ref = "intellij-platform" }

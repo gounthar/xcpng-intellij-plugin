@@ -1,0 +1,137 @@
+# Builds and tests on every push to main and every pull request.
+#
+# Carried from the toolbox sibling, with the packaging step renamed and one job deliberately
+# absent. What it does not do is worth stating, because it is the failure all three projects
+# keep hitting: a change can compile, pass every test, and still be wrong on screen. This
+# plugin is a tool window inside a running IDE, and nothing here runs one. CI raises the
+# floor; launching the IDE and looking at it is the only check for anything it renders.
+---
+name: ci
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tooling-references:
+    name: no tooling references
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      # fetch-depth: 0 is required, not tidiness. The default shallow checkout does not contain
+      # the pull request's base commit, and the script exits 2 rather than 0 when it cannot see
+      # it. "Could not check" must never render as a green tick.
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Check tracked content and commit messages
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          PUSH_AFTER: ${{ github.sha }}
+        run: |
+          if [ -n "$BASE" ] && [ -n "$HEAD" ]; then
+            bash .github/scripts/check-tooling-references.sh "$BASE" "$HEAD"
+          elif [ -n "$PUSH_BEFORE" ] && [ "$PUSH_BEFORE" != "0000000000000000000000000000000000000000" ]; then
+            # Backstop on main. The pull request check runs before the merge, so it never sees
+            # the message GitHub composes for a squashed merge.
+            bash .github/scripts/check-tooling-references.sh "$PUSH_BEFORE" "$PUSH_AFTER"
+          else
+            bash .github/scripts/check-tooling-references.sh
+          fi
+
+      - name: Check the pull request title and body
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -uo pipefail
+          pattern="$(base64 -d < .github/tooling-patterns.b64 | tr -d '\n')"
+          if ! gh api "repos/$REPO/pulls/$PR" --jq '.title, .body' > /tmp/pr-text.txt; then
+            echo "::error::Could not read the pull request; its title and body were NOT checked." >&2
+            exit 1
+          fi
+          if grep -Pn "$pattern" /tmp/pr-text.txt; then
+            echo "::error::The pull request title or body names a development tool." >&2
+            echo "A squashed merge composes its commit message from these, so this would land on main." >&2
+            exit 1
+          fi
+          echo "Pull request text clean."
+
+  build:
+    name: JDK 21
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # 21, and not by preference. gradle/gradle-daemon-jvm.properties pins toolchainVersion=21.
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Validate the Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v6
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      # Downloads IntelliJ IDEA Community on a cold runner, which is a large artifact and makes
+      # the first run of this job much slower than later ones. That is the Gradle cache doing
+      # its job afterwards, not a flaky step, so do not add a retry for it.
+      - name: Build and test
+        run: ./gradlew build
+
+      # The zip a release would ship. IntelliJ Platform names this task buildPlugin, not
+      # packagePlugin: the toolbox sibling hand-rolls its packaging and chose that name itself.
+      - name: Package the plugin
+        run: ./gradlew buildPlugin
+
+      - name: Upload the test report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-report
+          path: build/reports/tests/test
+          retention-days: 7
+
+  # DELIBERATELY ABSENT: a verifyPlugin job.
+  #
+  # The IntelliJ Plugin Verifier needs a list of IDEs to verify against, configured under
+  # intellijPlatform.pluginVerification.ides. None is configured yet, and an unconfigured
+  # verifier either fails for the wrong reason or verifies against nothing. The second is the
+  # dangerous one: a green "verified" that checked no IDE is worse than no job at all.
+  #
+  # Add the job and the ides block together, in one change, or not at all.
+
+  actionlint:
+    name: actionlint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # Pinned rather than latest, so a green run stays evidence about a known actionlint.
+      - name: Install actionlint
+        env:
+          ACTIONLINT_VERSION: 1.7.12
+        run: |
+          curl -fsSL -o /tmp/actionlint.tar.gz \
+            "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          sudo tar -xzf /tmp/actionlint.tar.gz -C /usr/local/bin actionlint
+          actionlint --version
+
+      - name: Lint the workflow files
+        run: actionlint -color
