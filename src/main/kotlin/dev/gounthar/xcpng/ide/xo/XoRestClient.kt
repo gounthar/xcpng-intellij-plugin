@@ -32,7 +32,10 @@ class XoRestClient(
     allowUnauthorized: Boolean = false,
 ) : XoClient {
 
-    private val base = baseUrl.trimEnd('/') + "/rest/v0"
+    // Normalised rather than trimmed inline, so both clients share one rule. The order inside
+    // matters and is explained there; trimming the concatenated spec instead would look like a
+    // fix and would not be one, because by then any stray space is interior.
+    private val base = normalizeBaseUrl(baseUrl) + "/rest/v0"
 
     private val json = Json { ignoreUnknownKeys = true }
 
@@ -160,7 +163,7 @@ class XoRestClient(
     private fun post(path: String, body: String? = null): Response = call("POST", path, body)
 
     private fun call(method: String, path: String, body: String?): Response {
-        val connection = (URL(base + path).openConnection() as HttpURLConnection).apply {
+        val connection = (urlOf(base + path).openConnection() as HttpURLConnection).apply {
             requestMethod = method
             connectTimeout = 15_000
             readTimeout = 60_000

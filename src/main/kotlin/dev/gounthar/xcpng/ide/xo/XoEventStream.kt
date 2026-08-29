@@ -184,7 +184,10 @@ internal class XoEventStream(
     private val collections: List<String> = listOf(VM_COLLECTION),
 ) {
 
-    private val base = baseUrl.trimEnd('/') + "/rest/v0"
+    // Normalised rather than trimmed inline, so both clients share one rule. The order inside
+    // matters and is explained there; trimming the concatenated spec instead would look like a
+    // fix and would not be one, because by then any stray space is interior.
+    private val base = normalizeBaseUrl(baseUrl) + "/rest/v0"
 
     private val json = Json { ignoreUnknownKeys = true }
 
@@ -327,7 +330,7 @@ internal class XoEventStream(
     }
 
     private fun openStream(): HttpURLConnection =
-        (URL("$base/events").openConnection() as HttpURLConnection).apply {
+        (urlOf("$base/events").openConnection() as HttpURLConnection).apply {
             requestMethod = "GET"
             connectTimeout = 15_000
             readTimeout = READ_TIMEOUT_MILLIS
@@ -343,7 +346,7 @@ internal class XoEventStream(
     private data class PostResult(val status: Int, val body: String)
 
     private fun post(path: String, body: String): PostResult {
-        val connection = (URL(base + path).openConnection() as HttpURLConnection).apply {
+        val connection = (urlOf(base + path).openConnection() as HttpURLConnection).apply {
             requestMethod = "POST"
             connectTimeout = 15_000
             readTimeout = 15_000
