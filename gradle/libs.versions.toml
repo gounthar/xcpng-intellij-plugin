@@ -8,7 +8,7 @@
 #
 # Build tooling. It never reaches the plugin zip, so keeping it current is the right default
 # and dependabot is left free to raise it.
-intellij-platform = "2.19.0"
+intellij-platform = "2.20.0"
 
 # The IDE this plugin is DEVELOPED against.
 #
